@@ -1,13 +1,46 @@
-import { useMemo } from "react";
-import { workflowNodes, workflowEdges, type WorkflowNode as WN } from "@/data/mock";
+import { useMemo, useState } from "react";
+import { workflowNodes, workflowEdges, type WorkflowNode as WN, type WorkflowEdge } from "@/data/mock";
 import { WorkflowNode } from "./WorkflowNode";
+import { EdgeTooltip } from "./EdgeTooltip";
 
 interface Props {
   selectedId?: string;
   onSelect: (n: WN) => void;
 }
 
-const NODE_HALF_W = 90; // approx half width in px of a workflow node card
+interface HoveredEdge {
+  edge: WorkflowEdge;
+  x: number;
+  y: number;
+}
+
+const colorForStatus = (s: WorkflowEdge["status"]) => {
+  switch (s) {
+    case "active":
+    case "processing":
+      return "hsl(var(--processing))";
+    case "completed":
+      return "hsl(var(--teal))";
+    case "error":
+      return "hsl(var(--danger))";
+    default:
+      return "hsl(0 0% 100% / 0.18)";
+  }
+};
+
+const alphaForStatus = (s: WorkflowEdge["status"]) => {
+  switch (s) {
+    case "active":
+    case "processing":
+      return 0.7;
+    case "completed":
+      return 0.5;
+    case "error":
+      return 0.7;
+    default:
+      return 1;
+  }
+};
 
 export function WorkflowCanvas({ selectedId, onSelect }: Props) {
   const byId = useMemo(
@@ -15,32 +48,33 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
     [],
   );
 
+  const [hovered, setHovered] = useState<HoveredEdge | null>(null);
+
   return (
-    <div className="absolute inset-0 overflow-hidden bg-grid-dots-tight">
-      <svg className="absolute inset-0 h-full w-full pointer-events-none">
+    <div
+      className="absolute inset-0 overflow-hidden bg-grid-dots-tight"
+      onMouseLeave={() => setHovered(null)}
+    >
+      <svg className="absolute inset-0 h-full w-full">
         <defs>
-          <marker
-            id="wf-arrow"
-            viewBox="0 0 10 10"
-            refX="9"
-            refY="5"
-            markerWidth="7"
-            markerHeight="7"
-            orient="auto"
-          >
-            <path d="M0,0 L10,5 L0,10 z" fill="hsl(0 0% 100% / 0.32)" />
-          </marker>
-          <marker
-            id="wf-arrow-hot"
-            viewBox="0 0 10 10"
-            refX="9"
-            refY="5"
-            markerWidth="7"
-            markerHeight="7"
-            orient="auto"
-          >
-            <path d="M0,0 L10,5 L0,10 z" fill="hsl(var(--amber) / 0.7)" />
-          </marker>
+          {(["processing", "completed", "error", "idle"] as const).map((s) => (
+            <marker
+              key={s}
+              id={`wf-arrow-${s}`}
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="7"
+              markerHeight="7"
+              orient="auto"
+            >
+              <path
+                d="M0,0 L10,5 L0,10 z"
+                fill={colorForStatus(s)}
+                opacity={alphaForStatus(s)}
+              />
+            </marker>
+          ))}
         </defs>
 
         {workflowEdges.map((e, i) => {
@@ -48,14 +82,6 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
           const b = byId[e.to];
           if (!a || !b) return null;
 
-          const isHot =
-            (a.status === "active" || a.status === "processing") &&
-            b.status !== "idle";
-          const isError = a.status === "error";
-
-          // n8n-style: out from right of source, in to left of target.
-          // Use CSS calc-friendly mixed units via two paths in pixels would require ResizeObserver,
-          // so we approximate by offsetting a few percent horizontally.
           const dx = Math.max(2.5, Math.abs(b.x - a.x) * 0.35);
           const x1 = a.x;
           const y1 = a.y;
@@ -64,34 +90,64 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
 
           const d = `M ${x1}% ${y1}% C ${x1 + dx}% ${y1}%, ${x2 - dx}% ${y2}%, ${x2}% ${y2}%`;
 
-          const stroke = isError
-            ? "hsl(var(--danger) / 0.55)"
-            : isHot
-              ? "hsl(var(--amber) / 0.6)"
-              : "hsl(0 0% 100% / 0.18)";
+          const stroke = colorForStatus(e.status);
+          const opacity = alphaForStatus(e.status);
+          const isFlowing = e.status === "active" || e.status === "processing";
+          const markerKey = (
+            e.status === "active" || e.status === "processing"
+              ? "processing"
+              : e.status
+          ) as "processing" | "completed" | "error" | "idle";
+
+          const onMove = (ev: React.MouseEvent) => {
+            const host = ev.currentTarget.ownerSVGElement?.parentElement;
+            const rect = host?.getBoundingClientRect();
+            setHovered({
+              edge: e,
+              x: ev.clientX - (rect?.left ?? 0),
+              y: ev.clientY - (rect?.top ?? 0),
+            });
+          };
 
           return (
             <g key={i}>
+              {/* Visible stroke */}
               <path
                 d={d}
                 fill="none"
                 stroke={stroke}
-                strokeWidth={isHot ? 1.75 : 1.25}
-                markerEnd={isHot ? "url(#wf-arrow-hot)" : "url(#wf-arrow)"}
+                strokeOpacity={opacity}
+                strokeWidth={isFlowing ? 1.75 : 1.25}
+                markerEnd={`url(#wf-arrow-${markerKey})`}
+                pointerEvents="none"
               />
-              {isHot && (
+              {isFlowing && (
                 <path
                   d={d}
                   fill="none"
-                  stroke="hsl(var(--amber))"
+                  stroke={stroke}
                   strokeWidth={1.5}
                   strokeDasharray="4 8"
-                  className="opacity-80"
-                  style={{
-                    animation: "flow-dash 1.4s linear infinite",
-                  }}
+                  className="opacity-90"
+                  style={{ animation: "flow-dash 1.4s linear infinite" }}
+                  pointerEvents="none"
                 />
               )}
+              {/* Invisible thick hit area for hover */}
+              <path
+                d={d}
+                fill="none"
+                stroke="transparent"
+                strokeWidth={14}
+                onMouseEnter={onMove}
+                onMouseMove={onMove}
+                onMouseLeave={() => setHovered(null)}
+                style={{ cursor: "help" }}
+              >
+                <title>
+                  {`${a.label} → ${b.label}\nstatus: ${e.status}\nevent: ${e.event}\nat: ${e.lastTransition}`}
+                </title>
+              </path>
             </g>
           );
         })}
@@ -107,8 +163,15 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
         />
       ))}
 
-      {/* unused width var to silence lint if needed */}
-      <span className="hidden">{NODE_HALF_W}</span>
+      {hovered && (
+        <EdgeTooltip
+          edge={hovered.edge}
+          fromLabel={byId[hovered.edge.from]?.label ?? hovered.edge.from}
+          toLabel={byId[hovered.edge.to]?.label ?? hovered.edge.to}
+          x={hovered.x}
+          y={hovered.y}
+        />
+      )}
     </div>
   );
 }
