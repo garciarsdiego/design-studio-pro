@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 import type { WorkflowNode as WN } from "@/data/mock";
 import { StatusDot } from "../StatusDot";
