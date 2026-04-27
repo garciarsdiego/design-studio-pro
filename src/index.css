@@ -240,3 +240,22 @@
 @keyframes flow-dash {
   to { stroke-dashoffset: -24; }
 }
+
+/* Edge simulation — progressive highlight.
+   Active edge breathes (width + opacity); completed edge briefly flashes brighter,
+   then settles into a calm, slightly elevated state. */
+@keyframes edge-active-pulse {
+  0%, 100% { stroke-opacity: 0.55; stroke-width: 1.5px; }
+  50%      { stroke-opacity: 1;    stroke-width: 2.4px; }
+}
+
+@keyframes edge-active-glow {
+  0%, 100% { stroke-opacity: 0;    stroke-width: 6px; }
+  50%      { stroke-opacity: 0.35; stroke-width: 10px; }
+}
+
+@keyframes edge-completed-flash {
+  0%   { stroke-opacity: 1;    stroke-width: 2.6px; }
+  60%  { stroke-opacity: 0.9;  stroke-width: 2px; }
+  100% { stroke-opacity: 0.78; stroke-width: 1.6px; }
+}
