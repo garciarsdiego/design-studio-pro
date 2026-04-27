@@ -24,7 +24,7 @@ const colorForStatus = (s: WorkflowEdge["status"]) => {
     case "error":
       return "hsl(var(--danger))";
     default:
-      return "hsl(0 0% 100% / 0.18)";
+      return "hsl(0 0% 100% / 0.45)";
   }
 };
 
@@ -32,11 +32,11 @@ const alphaForStatus = (s: WorkflowEdge["status"]) => {
   switch (s) {
     case "active":
     case "processing":
-      return 0.7;
+      return 0.9;
     case "completed":
-      return 0.5;
-    case "error":
       return 0.7;
+    case "error":
+      return 0.85;
     default:
       return 1;
   }
