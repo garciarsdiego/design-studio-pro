@@ -125,6 +125,7 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
                 strokeWidth={isFlowing ? 2 : 1.5}
                 strokeDasharray={e.status === "idle" ? "3 5" : undefined}
                 markerEnd={`url(#wf-arrow-${markerKey})`}
+                vectorEffect="non-scaling-stroke"
                 pointerEvents="none"
               />
               {isFlowing && (
@@ -134,6 +135,7 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
                   stroke={stroke}
                   strokeWidth={1.5}
                   strokeDasharray="4 8"
+                  vectorEffect="non-scaling-stroke"
                   className="opacity-90"
                   style={{ animation: "flow-dash 1.4s linear infinite" }}
                   pointerEvents="none"
@@ -145,6 +147,7 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
                 fill="none"
                 stroke="transparent"
                 strokeWidth={14}
+                vectorEffect="non-scaling-stroke"
                 onMouseEnter={onMove}
                 onMouseMove={onMove}
                 onMouseLeave={() => setHovered(null)}
