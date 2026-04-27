@@ -99,7 +99,7 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
               : e.status
           ) as "processing" | "completed" | "error" | "idle";
 
-          const onMove = (ev: React.MouseEvent) => {
+          const onMove = (ev: React.MouseEvent<SVGPathElement>) => {
             const host = ev.currentTarget.ownerSVGElement?.parentElement;
             const rect = host?.getBoundingClientRect();
             setHovered({

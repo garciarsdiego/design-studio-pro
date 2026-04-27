@@ -1,10 +1,10 @@
-import { useState } from "react";
 import { LayoutGrid, Columns3, List as ListIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { WorkflowNode as WN } from "@/data/mock";
+import { workflowNodes, type WorkflowNode as WN } from "@/data/mock";
 import { WorkflowCanvas } from "./WorkflowCanvas";
 import { WorkflowKanban } from "./WorkflowKanban";
 import { WorkflowList } from "./WorkflowList";
+import { EdgePanel } from "./EdgePanel";
 
 type Mode = "canvas" | "kanban" | "list";
 
@@ -15,12 +15,15 @@ const MODES: { id: Mode; icon: typeof LayoutGrid; label: string }[] = [
 ];
 
 interface Props {
-  onSelect: (n: WN) => void;
+  mode: Mode;
+  onModeChange: (m: Mode) => void;
   selectedId?: string;
+  onSelect: (n: WN | null) => void;
 }
 
-export function ConsoleView({ onSelect, selectedId }: Props) {
-  const [mode, setMode] = useState<Mode>("canvas");
+export function ConsoleView({ mode, onModeChange, selectedId, onSelect }: Props) {
+  const selectedNode =
+    workflowNodes.find((n) => n.id === selectedId) ?? null;
 
   return (
     <section
@@ -29,14 +32,14 @@ export function ConsoleView({ onSelect, selectedId }: Props) {
       className="absolute inset-0 animate-fade-in"
     >
       {/* View toggle — top right under nav */}
-      <div className="absolute top-24 right-6 z-20 inline-flex items-center gap-0.5 surface-glass rounded-full p-1">
+      <div className="absolute top-24 right-6 z-30 inline-flex items-center gap-0.5 surface-glass rounded-full p-1">
         {MODES.map((m) => {
           const Icon = m.icon;
           const isActive = mode === m.id;
           return (
             <button
               key={m.id}
-              onClick={() => setMode(m.id)}
+              onClick={() => onModeChange(m.id)}
               aria-label={m.label}
               className={cn(
                 "h-8 px-3 grid place-items-center rounded-full transition-all duration-200",
@@ -62,6 +65,12 @@ export function ConsoleView({ onSelect, selectedId }: Props) {
           <WorkflowList selectedId={selectedId} onSelect={onSelect} />
         )}
       </div>
+
+      <EdgePanel
+        node={selectedNode}
+        onClose={() => onSelect(null)}
+        onJump={(n) => onSelect(n)}
+      />
     </section>
   );
 }
