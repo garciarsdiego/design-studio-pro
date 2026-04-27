@@ -302,6 +302,12 @@ export interface WorkflowNode {
 export interface WorkflowEdge {
   from: string;
   to: string;
+  /** Status carried by the edge transition. */
+  status: AgentStatus | "completed";
+  /** Event/trigger that fired this transition. */
+  event: string;
+  /** When the transition last fired. */
+  lastTransition: string;
 }
 
 export const workflowNodes: WorkflowNode[] = [
@@ -315,14 +321,14 @@ export const workflowNodes: WorkflowNode[] = [
 ];
 
 export const workflowEdges: WorkflowEdge[] = [
-  { from: "wn_scrape",    to: "wn_normalize" },
-  { from: "wn_scrape",    to: "wn_embed" },
-  { from: "wn_normalize", to: "wn_reason" },
-  { from: "wn_embed",     to: "wn_reason" },
-  { from: "wn_reason",    to: "wn_synth" },
-  { from: "wn_reason",    to: "wn_report" },
-  { from: "wn_synth",     to: "wn_tools" },
-  { from: "wn_report",    to: "wn_tools" },
+  { from: "wn_scrape",    to: "wn_normalize", status: "error",     event: "fetch.failed → retry.skipped",    lastTransition: "10:31:08" },
+  { from: "wn_scrape",    to: "wn_embed",     status: "error",     event: "fetch.failed → embed.skipped",    lastTransition: "10:31:08" },
+  { from: "wn_normalize", to: "wn_reason",    status: "completed", event: "payload.normalised(1.2MB)",       lastTransition: "10:19:48" },
+  { from: "wn_embed",     to: "wn_reason",    status: "completed", event: "vectors.ready(812)",              lastTransition: "10:20:12" },
+  { from: "wn_reason",    to: "wn_synth",     status: "active",    event: "reasoning.partial → synth.warm",  lastTransition: "10:21:30" },
+  { from: "wn_reason",    to: "wn_report",    status: "active",    event: "reasoning.partial → report.draft",lastTransition: "10:21:30" },
+  { from: "wn_synth",     to: "wn_tools",     status: "idle",      event: "awaiting synth.complete",         lastTransition: "—" },
+  { from: "wn_report",    to: "wn_tools",     status: "idle",      event: "awaiting report.complete",        lastTransition: "—" },
 ];
 
 export { Workflow };
