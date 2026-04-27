@@ -55,7 +55,11 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
       className="absolute inset-0 overflow-hidden bg-grid-dots-tight"
       onMouseLeave={() => setHovered(null)}
     >
-      <svg className="absolute inset-0 h-full w-full">
+      <svg
+        className="absolute inset-0 h-full w-full"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+      >
         <defs>
           {(["processing", "completed", "error", "idle"] as const).map((s) => (
             <marker
@@ -67,6 +71,7 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
               markerWidth="7"
               markerHeight="7"
               orient="auto"
+              markerUnits="userSpaceOnUse"
             >
               <path
                 d="M0,0 L10,5 L0,10 z"
@@ -88,7 +93,7 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
           const x2 = b.x;
           const y2 = b.y;
 
-          const d = `M ${x1}% ${y1}% C ${x1 + dx}% ${y1}%, ${x2 - dx}% ${y2}%, ${x2}% ${y2}%`;
+          const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
 
           const stroke = colorForStatus(e.status);
           const opacity = alphaForStatus(e.status);
