@@ -156,10 +156,13 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
     };
   }, [measure]);
 
-  // Group edges by (nodeId + side) so we can spread anchors across the face.
+  // Group edges by (nodeId + side) and sort by the perpendicular position of
+  // the OTHER endpoint, so anchors come out in the same order they fan toward —
+  // this minimises visual crossings when many edges share a face.
   const sideGroups = useMemo(() => {
     if (!Object.keys(rects).length) return null;
-    const out: Record<string, Record<Side, number[]>> = {};
+    type Entry = { idx: number; key: number };
+    const out: Record<string, Record<Side, Entry[]>> = {};
     const ensure = (nid: string) =>
       (out[nid] ??= { right: [], left: [], top: [], bottom: [] });
 
@@ -167,28 +170,90 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
       const a = rects[e.from];
       const b = rects[e.to];
       if (!a || !b) return;
-      ensure(e.from)[pickSide(a, b)].push(i);
-      ensure(e.to)[pickSide(b, a)].push(i);
+      const sideA = pickSide(a, b);
+      const sideB = pickSide(b, a);
+      // Sort key = position of the *other* endpoint along the perpendicular axis.
+      ensure(e.from)[sideA].push({
+        idx: i,
+        key: sideA === "left" || sideA === "right" ? b.cy : b.cx,
+      });
+      ensure(e.to)[sideB].push({
+        idx: i,
+        key: sideB === "left" || sideB === "right" ? a.cy : a.cx,
+      });
     });
+
+    // Sort each bucket so neighbours along the face stay in monotonic order.
+    for (const nid of Object.keys(out)) {
+      for (const side of ["right", "left", "top", "bottom"] as Side[]) {
+        out[nid][side].sort((a, b) => a.key - b.key);
+      }
+    }
     return out;
   }, [rects]);
 
   /** Returns the perpendicular offset for edge i on a given (node, side). */
   const offsetFor = (nid: string, side: Side, edgeIdx: number, rect: Rect) => {
-    const list = sideGroups?.[nid]?.[side] ?? [edgeIdx];
-    const k = list.indexOf(edgeIdx);
+    const list = sideGroups?.[nid]?.[side];
+    if (!list || list.length === 0) return 0;
+    const k = list.findIndex((e) => e.idx === edgeIdx);
     const n = list.length;
     if (n <= 1) return 0;
-    // Spread along the available extent of the side, leaving 18% margin.
-    const extent = (side === "left" || side === "right" ? rect.h : rect.w) * 0.64;
+    // Reserve a generous margin so anchors never touch the corners.
+    const faceLen = side === "left" || side === "right" ? rect.h : rect.w;
+    const margin = Math.max(10, faceLen * 0.18);
+    const extent = faceLen - margin * 2;
+    // Adaptive step — keep at least 10px between anchors when possible.
     const step = extent / (n - 1);
     return -extent / 2 + k * step;
   };
 
   // ── Simulation ────────────────────────────────────────────────────────────
+  /** Topological order of edges: respect dependencies, fall back to array order. */
+  const simOrder = useMemo(() => {
+    const indeg: Record<string, number> = {};
+    const adj: Record<string, string[]> = {};
+    const nodeIds = workflowNodes.map((n) => n.id);
+    nodeIds.forEach((id) => {
+      indeg[id] = 0;
+      adj[id] = [];
+    });
+    workflowEdges.forEach((e) => {
+      if (indeg[e.to] === undefined) indeg[e.to] = 0;
+      if (!adj[e.from]) adj[e.from] = [];
+      adj[e.from].push(e.to);
+      indeg[e.to] = (indeg[e.to] ?? 0) + 1;
+    });
+
+    // Kahn — stable: keep insertion order of ready nodes.
+    const queue: string[] = nodeIds.filter((id) => (indeg[id] ?? 0) === 0);
+    const nodeOrder: string[] = [];
+    while (queue.length) {
+      const n = queue.shift()!;
+      nodeOrder.push(n);
+      for (const m of adj[n] ?? []) {
+        indeg[m] -= 1;
+        if (indeg[m] === 0) queue.push(m);
+      }
+    }
+    const rank: Record<string, number> = {};
+    nodeOrder.forEach((id, i) => (rank[id] = i));
+
+    // Order edges by (rank(from), rank(to)); unknowns sink to the end.
+    const fallback = nodeOrder.length;
+    return workflowEdges
+      .map((e, i) => ({
+        i,
+        a: rank[e.from] ?? fallback,
+        b: rank[e.to] ?? fallback,
+      }))
+      .sort((x, y) => x.a - y.a || x.b - y.b)
+      .map((e) => e.i);
+  }, []);
+
   const startSim = useCallback(() => {
     if (simRef.current) window.clearInterval(simRef.current);
-    const order = workflowEdges.map((_, i) => i);
+    const order = simOrder;
     let i = 0;
     setSimStatus(Object.fromEntries(order.map((k) => [k, "idle" as const])));
     simRef.current = window.setInterval(() => {
@@ -206,7 +271,7 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
         }
       }
     }, 900);
-  }, []);
+  }, [simOrder]);
 
   const stopSim = useCallback(() => {
     if (simRef.current) {
