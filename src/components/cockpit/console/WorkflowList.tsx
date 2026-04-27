@@ -1,11 +1,13 @@
 import { workflowNodes, type WorkflowNode as WN } from "@/data/mock";
 import { StatusDot } from "../StatusDot";
+import { cn } from "@/lib/utils";
 
 interface Props {
+  selectedId?: string;
   onSelect: (n: WN) => void;
 }
 
-export function WorkflowList({ onSelect }: Props) {
+export function WorkflowList({ onSelect, selectedId }: Props) {
   return (
     <div className="absolute inset-0 overflow-auto px-6 pt-24 pb-32">
       <div className="max-w-5xl mx-auto space-y-2">
@@ -20,7 +22,12 @@ export function WorkflowList({ onSelect }: Props) {
           <button
             key={n.id}
             onClick={() => onSelect(n)}
-            className="w-full grid grid-cols-12 gap-4 px-4 py-3 surface-elevated rounded-xl hover:border-amber/30 transition-colors text-left items-center"
+            className={cn(
+              "w-full grid grid-cols-12 gap-4 px-4 py-3 surface-elevated rounded-xl transition-all text-left items-center",
+              selectedId === n.id
+                ? "border-amber/50 glow-amber-soft"
+                : "hover:border-amber/30",
+            )}
           >
             <div className="col-span-3 flex items-center gap-2.5 min-w-0">
               <StatusDot status={n.status} />
