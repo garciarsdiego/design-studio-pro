@@ -51,11 +51,17 @@ export function ConsoleView({ onSelect, selectedId }: Props) {
         })}
       </div>
 
-      {mode === "canvas" && (
-        <WorkflowCanvas selectedId={selectedId} onSelect={onSelect} />
-      )}
-      {mode === "kanban" && <WorkflowKanban onSelect={onSelect} />}
-      {mode === "list" && <WorkflowList onSelect={onSelect} />}
+      <div key={mode} className="absolute inset-0 animate-fade-in">
+        {mode === "canvas" && (
+          <WorkflowCanvas selectedId={selectedId} onSelect={onSelect} />
+        )}
+        {mode === "kanban" && (
+          <WorkflowKanban selectedId={selectedId} onSelect={onSelect} />
+        )}
+        {mode === "list" && (
+          <WorkflowList selectedId={selectedId} onSelect={onSelect} />
+        )}
+      </div>
     </section>
   );
 }

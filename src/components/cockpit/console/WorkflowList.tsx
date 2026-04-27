@@ -1,11 +1,13 @@
 import { workflowNodes, type WorkflowNode as WN } from "@/data/mock";
 import { StatusDot } from "../StatusDot";
+import { cn } from "@/lib/utils";
 
 interface Props {
+  selectedId?: string;
   onSelect: (n: WN) => void;
 }
 
-export function WorkflowList({ onSelect }: Props) {
+export function WorkflowList({ onSelect, selectedId }: Props) {
   return (
     <div className="absolute inset-0 overflow-auto px-6 pt-24 pb-32">
       <div className="max-w-5xl mx-auto space-y-2">
