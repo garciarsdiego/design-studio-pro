@@ -392,18 +392,42 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
               });
             };
 
+            const isActive = status === "active" || status === "processing";
+            const isCompleted = status === "completed";
+            const isHighlight = isSimming && (isActive || isCompleted);
+
             return (
               <g key={i}>
+                {/* Soft outer glow for the currently active edge during simulation. */}
+                {isSimming && isActive && (
+                  <path
+                    d={d}
+                    fill="none"
+                    stroke={stroke}
+                    strokeLinecap="round"
+                    style={{
+                      filter: "blur(2px)",
+                      animation: "edge-active-glow 1.2s ease-in-out infinite",
+                    }}
+                  />
+                )}
                 <path
                   d={d}
                   fill="none"
                   stroke={stroke}
-                  strokeOpacity={opacity}
-                  strokeWidth={isFlowing ? 1.75 : 1.25}
+                  strokeOpacity={isHighlight ? undefined : opacity}
+                  strokeWidth={isActive ? 1.75 : isCompleted ? 1.6 : 1.25}
                   strokeDasharray={status === "idle" ? "3 5" : undefined}
                   markerEnd={`url(#wf-arrow-${markerKey})`}
+                  style={
+                    isSimming && isActive
+                      ? { animation: "edge-active-pulse 1.2s ease-in-out infinite" }
+                      : isSimming && isCompleted
+                        ? { animation: "edge-completed-flash 0.6s ease-out both" }
+                        : undefined
+                  }
                 />
-                {isFlowing && (
+                {isActive && (
                   <path
                     d={d}
                     fill="none"
