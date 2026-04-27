@@ -1,44 +1,30 @@
 import { useEffect, useState } from "react";
 import { MenuCapsule } from "@/components/cockpit/MenuCapsule";
 import { ChatComposer } from "@/components/cockpit/ChatComposer";
-import { NodeCanvas } from "@/components/cockpit/NodeCanvas";
+import { ChatView } from "@/components/cockpit/chat/ChatView";
+import { ConsoleView } from "@/components/cockpit/console/ConsoleView";
+import { DataView } from "@/components/cockpit/data/DataView";
 import { NodeInspector } from "@/components/cockpit/NodeInspector";
 import { SystemStatusModal } from "@/components/cockpit/SystemStatusModal";
-import { AskModal } from "@/components/cockpit/AskModal";
-import { MemoryModal } from "@/components/cockpit/MemoryModal";
 import { SetupModal } from "@/components/cockpit/SetupModal";
-import { RunsModal } from "@/components/cockpit/RunsModal";
-import { agentNodes, systemMetrics, type AgentNode, type NavId } from "@/data/mock";
+import {
+  agentNodes,
+  systemMetrics,
+  type AgentNode,
+  type NavId,
+  type WorkflowNode,
+} from "@/data/mock";
 import { toast } from "sonner";
 
 const Index = () => {
-  const [active, setActive] = useState<NavId>("console");
+  const [active, setActive] = useState<NavId>("chat");
   const [statusOpen, setStatusOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
-  const [askOpen, setAskOpen] = useState(false);
-  const [runsOpen, setRunsOpen] = useState(false);
-  const [memoryOpen, setMemoryOpen] = useState(false);
-  const [selectedNode, setSelectedNode] = useState<AgentNode | null>(null);
+  const [inspectedNode, setInspectedNode] = useState<AgentNode | null>(null);
 
-  // Document title for SEO
   useEffect(() => {
     document.title = "Omniforge Studio — Agent Cockpit";
   }, []);
-
-  const handleNavigate = (id: NavId) => {
-    setActive(id);
-    if (id === "console") return;
-    if (id === "ask") setAskOpen(true);
-    if (id === "runs") setRunsOpen(true);
-    if (id === "memory") setMemoryOpen(true);
-    if (id === "setup") setSetupOpen(true);
-  };
-
-  // When a modal is closed, return active to console
-  const closeModal = (setter: (v: boolean) => void) => () => {
-    setter(false);
-    setActive("console");
-  };
 
   const handleSubmit = (value: string) => {
     toast(`Instruction routed to Orchestrator`, {
@@ -47,9 +33,25 @@ const Index = () => {
     });
   };
 
+  // Map workflow node → AgentNode shape for the inspector
+  const inspectWorkflowNode = (n: WorkflowNode) => {
+    const fallback = agentNodes.find((a) => a.name === n.agent) ?? agentNodes[0];
+    setInspectedNode({
+      ...fallback,
+      id: n.id,
+      name: n.label,
+      status: n.status === "completed" ? "idle" : n.status,
+      statusLabel: n.status.toUpperCase(),
+      icon: n.icon,
+      x: n.x,
+      y: n.y,
+      description: `${n.label} step is handled by ${n.agent}.`,
+    });
+  };
+
   return (
     <div className="relative min-h-screen bg-background bg-grid-dots overflow-hidden">
-      {/* Soft radial vignette to focus the canvas */}
+      {/* Soft radial vignette */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -63,30 +65,31 @@ const Index = () => {
 
       <MenuCapsule
         active={active}
-        onNavigate={handleNavigate}
+        onNavigate={setActive}
         onOpenStatus={() => setStatusOpen(true)}
         onOpenSettings={() => setSetupOpen(true)}
         pendingApprovals={systemMetrics.approvalsPending}
       />
 
-      {/* Canvas with nodes */}
       <main className="relative h-screen">
-        <NodeCanvas
-          nodes={agentNodes}
-          selectedId={selectedNode?.id}
-          onSelect={(n) => setSelectedNode(n)}
-        />
+        {active === "chat" && <ChatView onSubmit={handleSubmit} />}
+        {active === "console" && (
+          <ConsoleView
+            selectedId={inspectedNode?.id}
+            onSelect={inspectWorkflowNode}
+          />
+        )}
+        {active === "data" && <DataView />}
       </main>
 
-      <ChatComposer onSubmit={handleSubmit} hint="⌘ K" />
+      {/* Composer fixed at bottom for Console only — Chat has its own embedded stack */}
+      {active === "console" && (
+        <ChatComposer onSubmit={handleSubmit} hint="⌘ K" />
+      )}
 
-      {/* Modals */}
       <SystemStatusModal open={statusOpen} onClose={() => setStatusOpen(false)} />
-      <AskModal open={askOpen} onClose={closeModal(setAskOpen)} />
-      <MemoryModal open={memoryOpen} onClose={closeModal(setMemoryOpen)} />
-      <SetupModal open={setupOpen} onClose={closeModal(setSetupOpen)} />
-      <RunsModal open={runsOpen} onClose={closeModal(setRunsOpen)} />
-      <NodeInspector node={selectedNode} onClose={() => setSelectedNode(null)} />
+      <SetupModal open={setupOpen} onClose={() => setSetupOpen(false)} />
+      <NodeInspector node={inspectedNode} onClose={() => setInspectedNode(null)} />
     </div>
   );
 };
