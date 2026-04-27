@@ -2,104 +2,237 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Omniforge Studio — dark-only cockpit design system.
+   All semantic tokens in HSL. State-driven palette, no gradients, no serifs. */
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
+  :root,
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Canvas */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 96%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    /* Glass surfaces */
+    --surface-glass: 240 5% 8%;
+    --surface-elevated: 240 4% 11%;
+    --surface-deep: 240 6% 5%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    /* Borders / hairlines */
+    --hairline: 0 0% 100%;       /* used with low alpha */
+    --hairline-strong: 0 0% 100%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Text scale */
+    --text-strong: 0 0% 96%;
+    --text-mute: 0 0% 55%;
+    --text-dim: 0 0% 35%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* States */
+    --amber: 18 86% 58%;          /* primary action / active */
+    --amber-foreground: 0 0% 100%;
+    --amber-glow: 18 95% 62%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --teal: 165 68% 63%;          /* idle / ok */
+    --teal-foreground: 0 0% 8%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --danger: 358 75% 59%;        /* error / blocked */
+    --danger-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --processing: 257 64% 69%;    /* compiling / processing */
+    --processing-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    /* shadcn token bridge */
+    --card: var(--surface-glass);
+    --card-foreground: var(--foreground);
+
+    --popover: var(--surface-elevated);
+    --popover-foreground: var(--foreground);
+
+    --primary: var(--amber);
+    --primary-foreground: var(--amber-foreground);
+
+    --secondary: 240 4% 14%;
+    --secondary-foreground: 0 0% 96%;
+
+    --muted: 240 4% 12%;
+    --muted-foreground: var(--text-mute);
+
+    --accent: 240 4% 14%;
+    --accent-foreground: 0 0% 96%;
+
+    --destructive: var(--danger);
+    --destructive-foreground: var(--danger-foreground);
+
+    --border: 0 0% 100%;
+    --input: 240 4% 14%;
+    --ring: var(--amber);
+
+    --radius: 0.875rem;
+
+    /* Sidebar (only used inside Run → Structure) */
+    --sidebar-background: 240 5% 6%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: var(--amber);
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 240 4% 12%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 0 0% 100%;
+    --sidebar-ring: var(--amber);
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border) / 0.08);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    font-feature-settings: "ss01", "cv11";
   }
+
+  ::selection {
+    background: hsl(var(--amber) / 0.35);
+    color: hsl(var(--foreground));
+  }
+
+  /* Scrollbar — thin, subtle */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border) / 0.08);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--border) / 0.16); }
+}
+
+@layer utilities {
+  .font-mono {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-feature-settings: "ss02", "cv11";
+  }
+
+  /* Dot grid background — calm operational canvas */
+  .bg-grid-dots {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      hsl(0 0% 100% / 0.045) 1px,
+      transparent 0
+    );
+    background-size: 24px 24px;
+  }
+
+  .bg-grid-dots-tight {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      hsl(0 0% 100% / 0.06) 1px,
+      transparent 0
+    );
+    background-size: 16px 16px;
+  }
+
+  /* Glass surfaces */
+  .surface-glass {
+    background-color: hsl(var(--surface-glass) / 0.65);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid hsl(var(--border) / 0.08);
+  }
+
+  .surface-glass-strong {
+    background-color: hsl(var(--surface-glass) / 0.88);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid hsl(var(--border) / 0.1);
+  }
+
+  .surface-elevated {
+    background-color: hsl(var(--surface-elevated) / 0.92);
+    border: 1px solid hsl(var(--border) / 0.08);
+  }
+
+  /* Glow effects — only on truly active elements */
+  .glow-amber {
+    box-shadow:
+      0 0 0 1px hsl(var(--amber) / 0.35),
+      0 0 24px -2px hsl(var(--amber) / 0.45),
+      inset 0 0 20px hsl(var(--amber) / 0.06);
+  }
+
+  .glow-amber-soft {
+    box-shadow:
+      0 0 32px -8px hsl(var(--amber) / 0.5),
+      0 0 8px -2px hsl(var(--amber) / 0.3);
+  }
+
+  .text-mono-label {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: hsl(var(--text-mute));
+  }
+}
+
+@layer components {
+  /* Status dot with continuous pulse */
+  .status-dot {
+    @apply relative inline-block h-2 w-2 rounded-full;
+  }
+  .status-dot::after {
+    content: "";
+    @apply absolute inset-0 rounded-full;
+    animation: status-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+@keyframes status-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes node-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px hsl(var(--amber) / 0.35),
+      0 0 24px -2px hsl(var(--amber) / 0.4),
+      inset 0 0 20px hsl(var(--amber) / 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px hsl(var(--amber) / 0.5),
+      0 0 36px -2px hsl(var(--amber) / 0.6),
+      inset 0 0 24px hsl(var(--amber) / 0.08);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes caret-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
