@@ -61,41 +61,46 @@ function statusStyles(node: WN, selected?: boolean) {
   }
 }
 
-export function WorkflowNode({ node, selected, onClick, positioned }: Props) {
-  const Icon = node.icon;
-  const s = statusStyles(node, selected);
+export const WorkflowNode = forwardRef<HTMLButtonElement, Props>(
+  function WorkflowNode({ node, selected, onClick, positioned }, ref) {
+    const Icon = node.icon;
+    const s = statusStyles(node, selected);
 
-  return (
-    <button
-      onClick={onClick}
-      style={
-        positioned
-          ? { left: `${node.x}%`, top: `${node.y}%` }
-          : undefined
-      }
-      className={cn(
-        positioned && "absolute -translate-x-1/2 -translate-y-1/2",
-        "surface-glass-strong rounded-xl px-3.5 py-3 min-w-[180px] text-left border",
-        "flex items-center gap-3 transition-all duration-200",
-        "hover:scale-[1.02]",
-        s.ring,
-        s.glow,
-      )}
-    >
-      <div className={cn("h-9 w-9 grid place-items-center rounded-lg shrink-0 border", s.iconBg)}>
-        <Icon className={cn("h-4 w-4", s.iconText)} strokeWidth={1.5} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <StatusDot status={node.status} />
-          <span className="text-[12.5px] text-foreground truncate">
-            {node.label}
-          </span>
+    return (
+      <button
+        ref={ref}
+        onClick={onClick}
+        data-node-id={node.id}
+        style={
+          positioned
+            ? { left: `${node.x}%`, top: `${node.y}%` }
+            : undefined
+        }
+        className={cn(
+          positioned && "absolute -translate-x-1/2 -translate-y-1/2",
+          "surface-glass-strong rounded-xl px-3.5 py-3 min-w-[180px] text-left border",
+          "flex items-center gap-3 transition-all duration-200",
+          "hover:scale-[1.02]",
+          s.ring,
+          s.glow,
+        )}
+      >
+        <div className={cn("h-9 w-9 grid place-items-center rounded-lg shrink-0 border", s.iconBg)}>
+          <Icon className={cn("h-4 w-4", s.iconText)} strokeWidth={1.5} />
         </div>
-        <div className="font-mono text-[10px] text-foreground/40 mt-0.5 truncate">
-          {node.agent} · {node.metric}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <StatusDot status={node.status} />
+            <span className="text-[12.5px] text-foreground truncate">
+              {node.label}
+            </span>
+          </div>
+          <div className="font-mono text-[10px] text-foreground/40 mt-0.5 truncate">
+            {node.agent} · {node.metric}
+          </div>
         </div>
-      </div>
-    </button>
-  );
-}
+      </button>
+    );
+  },
+);
+
