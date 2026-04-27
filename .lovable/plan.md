@@ -1,106 +1,159 @@
-# Omniforge Studio — Design Cockpit
+# Reorganização da cockpit — "Panel of Glass"
 
-Direção fechada nas 3 referências: canvas preto puro com grid de pontos, cápsula de navegação flutuante no topo, nós dispersos como ícones, modais glass com dim sólido, composer de chat fixo no rodapé como cápsula translúcida. Sem colunas fixas, sem sidebars permanentes — sidebar só aparece dentro de Run → Structure (DAG).
+A direção atual está validada. Esta revisão reestrutura navegação, repensa o Console como workflow editor, simplifica o Chat e promove Ask a tela principal de conversa. Tudo continua acontecendo sobre o mesmo desktop preto único, sem rotas — apenas troca de "view" no canvas central.
 
-## Linguagem visual
+## 1. Navegação (cápsula superior)
 
-**Paleta (dark-only, state-driven)**
-- Canvas: `#000` puro
-- Grid: pontos `rgba(255,255,255,0.04)` espaçados 24px
-- Surface glass: `rgba(18,18,20,0.65)` + `backdrop-blur-xl` + borda `rgba(255,255,255,0.08)`
-- Surface elevated (cards de nó): `rgba(28,28,30,0.85)`
-- Âmbar primário `#F0723A` — ações, item ativo, glow
-- Teal `#5EE3C1` — status idle/ok
-- Vermelho `#E5484D` — erro/bloqueio
-- Roxo `#9B7BE3` — compiling/processing
-- Texto: `rgba(255,255,255,0.95)` / mute `rgba(255,255,255,0.55)` / dim `rgba(255,255,255,0.35)`
+Reduzir para 3 itens + ícone:
 
-**Tipografia**
-- Inter — UI geral, títulos
-- JetBrains Mono — IDs, labels de seção em CAIXA ALTA, logs, código, timestamps
+```text
+[ ◇ OMNIFORGE ]   [ Chat ]  [ Console ]  [ Data ]     [ ⌘ ] [ 🔔 ] [ ⚙ ] [ 👤 ]
+```
 
-**Glow & motion (médio + pulse vivo)**
-- Glow âmbar radial sutil em: nó ativo, item de menu ativo, botão primário, send do chat
-- Pulse 2s contínuo nos status dots (teal/vermelho/roxo)
-- Pulse leve no nó ativo (scale 1 → 1.02, opacity glow 0.6 → 1)
-- Transições: 180ms ease-out padrão, 240ms para modais
+- **Chat** (novo padrão / antigo Ask) — vista principal de conversa.
+- **Console** — workflow visual (canvas / kanban / lista).
+- **Data** — consolida Runs + Memory em uma única tela com sub-abas.
+- **Setup** vira só o ícone de engrenagem ⚙ (abre modal como hoje).
 
-**Sem**: serifa, gradientes coloridos, sombras pretas pesadas, bordas duras de 1px claras.
+Atualizar `navItems` em `src/data/mock.ts` para `chat | console | data` e remover entries de runs/memory/ask/setup do menu.
 
-## Estrutura de telas
+## 2. Chat — tela principal "leve e flutuante"
 
-**Home (`/`) — Canvas limpo**
-- Fundo preto + grid de pontos
-- Cápsula de navegação flutuante centralizada no topo: `Console · Ask · Runs · Memory · Setup` + ícones de sino, settings, avatar à direita (mesma cápsula ou cápsula gêmea)
-- Item ativo: pill âmbar preenchido com glow
-- Canvas central: nós do projeto (Orchestrator, Data_Ingest, Analysis_Engine, CodeGen_v2, Web_Scraper) dispersos organicamente
-- Nó central destacado em card glass com glow âmbar + status dot pulsante
-- Nós secundários: ícone circular + label mono pequeno embaixo
-- Composer de chat fixo no rodapé: cápsula translúcida full-width com sparkle à esquerda, placeholder "Instruct the active nodes…", botão send âmbar à direita
-- **Sem painel lateral**. System Status acessível pelo sino (abre modal).
+Inspiração: Claude Cowork / Codex Desktop. Não é modal: é a view default da app quando se abre.
 
-**Console** = home (mesma rota). Clicar Console no menu = ir pra `/`.
+Layout (sobre o canvas preto + dot grid, sem sidebars):
 
-**Ask (modal)**
-- Abre como modal glass grande centralizado sobre o canvas escurecido (dim 75%)
-- Header mono: `ASK · NEW THREAD`
-- Lista de mensagens (user/agent) com bubbles glass discretos
-- Plan preview embutido como bloco mono com fundo levemente mais escuro + botões Deny/Execute (estética da imagem 2)
-- Composer interno reaproveita o do rodapé
+```text
+                ┌───────────────────────────────┐
+                │   Conversa flutuante (glass)  │
+                │   - bolhas user / agent       │
+                │   - plan previews inline      │
+                │   - max-w 760px, centrado     │
+                └───────────────────────────────┘
 
-**Runs (modal lista → modal detalhe)**
-- Modal grande: tabela de runs com ID mono, status dot, agente, duração, timestamp
-- Clicar uma run → expande para vista ampla com tabs em cápsula interna: Overview · Structure · Activity · Conversations · Artifacts · Logs
-- **Structure** é a única tela com sidebar: DAG ocupa centro, sidebar direita lista nós + Inspector ao clicar um nó. Cápsula de menu permanece visível no topo.
+           ┌───────────────────────────────────────┐
+           │  ⌘ wf_atlas_main  ·  ses_4421  ·  ▾  │  ← strip de contexto
+           ├───────────────────────────────────────┤
+           │  ✦  Instruct the active nodes…   →   │  ← composer cápsula
+           └───────────────────────────────────────┘
+```
 
-**Memory (modal)**
-- Modal amplo com matriz 48×16 de campos (grid de células pequenas, intensidade âmbar = densidade)
-- Lista de depósitos abaixo da matriz (não lateral) em cards glass empilháveis
+- A "janela" de chat é um container `surface-glass` de largura limitada centrado verticalmente, sem barra de título — só respira sobre o canvas.
+- Composer permanece fixo no rodapé como hoje, mas ganha **acima dele** um strip fino com:
+  - workflow ativo (`wf_atlas_main`)
+  - sessão (`ses_4421`)
+  - dropdown de modelo (mock)
+  - botão "+ New session"
+- Sem modal. Quando o usuário clica em "Console" ou "Data" na cápsula, o chat se esconde com fade e a outra view aparece. O composer pode permanecer visível em todas as views (já é o caso).
 
-**Setup (modal)**
-- Modal com tabs em cápsula interna: Workspace · Team · Integrations · Models · Data
-- Conteúdo de cada tab em forma vertical simples
+Componentes novos: `ChatView.tsx`, `SessionStrip.tsx`. Reaproveita `ChatComposer`, `CodeBlock`, dados de `askMessages`.
 
-**Modais — comportamento padrão**
-- Backdrop: `rgba(0,0,0,0.75)` sólido (não mostra canvas blur atrás — foco máximo)
-- Container: glass `rgba(18,18,20,0.85)` + blur + borda 1px branco 8% + radius `xl`
-- Header: ícone âmbar + label mono CAIXA ALTA + X no canto
-- Footer sticky com ações (ghost à esquerda, primário âmbar à direita)
-- Fecha com Esc, clique fora, ou X
-- Animação: scale-in 0.95→1 + fade 200ms
+## 3. Console — workflow editor (n8n / Make style)
 
-**System Status (modal pelo sino)**
-- Bloco mono: latência, nós ativos, recent activity timeline com timestamps mono
+Substitui o `NodeCanvas` atual de "nós orbitando o Orchestrator" por um **DAG editável estilo n8n**, com 3 modos de visualização alternáveis por um toggle no canto.
 
-## Componentes a construir
+```text
+┌──────────────────────────────────────────────────────────┐
+│                                       [ ▣ Canvas | ▦ Kanban | ☰ List ] │
+│                                                          │
+│   ┌──────┐      ┌────────────┐      ┌─────────────┐      │
+│   │ Web_ │─────▶│ Data_      │─────▶│ Analysis_   │──┐   │
+│   │Scraper│     │ Ingest     │      │ Engine      │  │   │
+│   └──────┘      └────────────┘      └─────────────┘  │   │
+│                                                ▼     ▼   │
+│                                         ┌────────┐ ┌────┐│
+│                                         │CodeGen │ │Repo││
+│                                         └────────┘ └────┘│
+└──────────────────────────────────────────────────────────┘
+```
 
-1. `AppShell` — canvas grid + cápsula de menu + composer rodapé (presente em toda rota)
-2. `MenuCapsule` — pill flutuante com nav + ações (sino, settings, avatar)
-3. `ChatComposer` — cápsula glass no rodapé com sparkle + input + send
-4. `NodeCanvas` — render dos nós dispersos com posicionamento absoluto, glow no ativo, pulse nos status
-5. `NodeCard` — card glass para nó selecionado/central
-6. `NodeDot` — ícone circular + label para nós secundários
-7. `GlassModal` — wrapper padrão (header mono + content + footer sticky)
-8. `CodeBlock` — bloco mono escuro embutido para prompts/logs com sintaxe `[SYS]` âmbar
-9. `StatusDot` — ponto colorido com animação pulse
-10. `CapsuleTabs` — tabs em cápsula para uso interno em modais
-11. `DAGView` + `DAGSidebar` — única exceção com sidebar (só em Run → Structure)
-12. `MemoryMatrix` — grid 48×16 de células com intensidade
+### 3.1 Canvas mode (default)
+- Nós retangulares em cards glass com: ícone do agente, nome, status dot pulsante, métrica curta (ex: "812 vec", "ctx 8k").
+- Conexões com curvas Bézier (não linhas retas) em `hsl(0 0% 100% / 0.12)`, mais espessas (1.5px), com seta no destino.
+- Nó ativo recebe glow âmbar e pulse; demais ficam em tom neutro com status dot.
+- Clique no nó abre o `NodeInspector` lateral (painel direito flutuante que escorrega — não sidebar fixa).
+- Pan/zoom **não** é necessário no MVP — layout é fixo do mock.
+- Reaproveita estrutura de `dagNodes` / `dagEdges` (já existe), expandida para representar o workflow principal.
 
-## Mock data
-`src/data/mock.ts` centraliza: projetos, nós, runs, threads, depósitos de memória, eventos. IDs em prefixos mono (`wf_`, `tk_`, `ses_`, `t_`). Updates simulados a cada 8s para dar sensação viva.
+### 3.2 Kanban mode
+- Colunas por **status**: Idle · Processing · Active · Error · Completed.
+- Cards do mesmo agente/nó migram entre colunas com base no status atual.
+- Card mostra: nome do nó, agente responsável, último timestamp, métrica.
 
-## Tokens & setup técnico
-- `index.css`: nova paleta HSL, tokens glass, grid background utility
-- `tailwind.config.ts`: cores semânticas (canvas, glass, amber, teal, danger, processing), animations (pulse-glow, fade-scale)
-- Fontes Inter + JetBrains Mono via `<link>` no index.html
-- Roteamento: `/` (home/console), `/runs/:id` (vista ampla), tudo mais é state de modal sobre `/`
+### 3.3 List mode
+- Tabela densa estilo `runs` com: status dot, nome, agente, último update, duração, ações.
 
-## Ordem de entrega (tudo de uma vez, mas nessa sequência interna)
-1. Tokens, fontes, grid background, shell (cápsula + composer)
-2. NodeCanvas + NodeCard + NodeDot + StatusDot com mock
-3. GlassModal base + System Status modal (sino)
-4. Ask, Memory, Setup como modais
-5. Runs lista (modal) + Run detalhe com CapsuleTabs
-6. DAGView com sidebar (única exceção) dentro de Structure
-7. Animações pulse, glow, transições de modal
+### 3.4 Toggle
+- Cápsula de 3 ícones no canto superior direito da view (abaixo do menu), `surface-glass`, mesmo estilo dos `CapsuleTabs`.
+
+Componentes novos:
+- `src/components/cockpit/console/WorkflowCanvas.tsx` (substitui `NodeCanvas`)
+- `src/components/cockpit/console/WorkflowKanban.tsx`
+- `src/components/cockpit/console/WorkflowList.tsx`
+- `src/components/cockpit/console/ConsoleView.tsx` (orquestra o toggle)
+- `src/components/cockpit/console/WorkflowNode.tsx` (card do nó)
+
+Mock: estender `dagNodes` em `mock.ts` para virar o `workflowNodes` principal (com posições, métricas, agente, status). `agentNodes` antigo pode ser descontinuado.
+
+## 4. Data — consolida Runs + Memory
+
+Substitui dois itens do menu por um. Não é modal: é uma view full-canvas que entra com fade quando "Data" é selecionado.
+
+Layout:
+
+```text
+┌──────────────────────────────────────────────┐
+│  [ Runs ]  [ Memory ]  [ Deposits ]          │  ← CapsuleTabs no topo
+├──────────────────────────────────────────────┤
+│                                              │
+│   Conteúdo da aba ativa                      │
+│                                              │
+└──────────────────────────────────────────────┘
+```
+
+- **Runs**: lista que já existe em `RunsModal` (`RunsList`) + drill-down. O drill-down (Overview / Structure / Activity / Conversations / Artifacts / Logs) permanece — é o único lugar que usa sidebar, na aba Structure (já aprovado).
+- **Memory**: a matriz 48×16 + legenda.
+- **Deposits**: a lista de `memoryDeposits` (estava junto da Memory no modal antigo, agora ganha aba própria).
+
+Componentes:
+- `src/components/cockpit/data/DataView.tsx` (host com tabs)
+- Mover lógica de `RunsModal` → `RunsPanel.tsx` (sem `GlassModal` wrapper).
+- Mover matriz → `MemoryPanel.tsx`. Mover deposits → `DepositsPanel.tsx`.
+- `RunsModal.tsx` e `MemoryModal.tsx` antigos podem ser removidos.
+
+## 5. Ask → absorvido pelo Chat
+
+A tela "Chat" descrita em §2 já é o que era o Ask, agora como vista principal. `AskModal.tsx` é removido. Mensagens, plan previews e botões Execute/Deny migram para `ChatView.tsx`.
+
+## 6. Setup
+
+Permanece como modal acionado pelo ícone de engrenagem na cápsula superior. Sem mudança de layout. Removido do menu de navegação principal.
+
+## 7. Ajustes em `Index.tsx`
+
+Trocar `active` para `"chat" | "console" | "data"`. View default vira `chat`. Renderização condicional simples:
+
+```tsx
+{active === "chat" && <ChatView />}
+{active === "console" && <ConsoleView />}
+{active === "data" && <DataView />}
+```
+
+Modais restantes: `SetupModal`, `SystemStatusModal`, `NodeInspector`. Composer fixo continua para todas as views (no Data e dentro do drill-down de Run pode ser ocultado para não poluir).
+
+## 8. Detalhes técnicos
+
+- **Transições entre views**: fade + leve scale (`animate-fade-in` + `scale-in`) no container de cada view, 200ms, para reforçar "panel of glass".
+- **Sem rotas**: continua tudo em `/`. Estado `active` controla a view.
+- **Tokens**: nenhum token novo. Reusar `surface-glass`, `surface-glass-strong`, `glow-amber-soft`, `bg-grid-dots`.
+- **Z-index**: cápsula superior 40, composer 30, modais 50, inspetor flutuante 35.
+- **Acessibilidade**: cada view recebe `role="region"` + `aria-label`.
+- **Dados mock**: estender `dagNodes` no `mock.ts` para o workflow principal do Console; manter `runs`, `memoryDeposits`, `askMessages` como estão.
+
+## 9. Entregáveis em ordem
+
+1. Atualizar `navItems` e `Index.tsx` para nova estrutura de 3 views + ícone.
+2. Criar `ChatView` + `SessionStrip`; remover `AskModal`.
+3. Criar `console/` (Canvas, Kanban, List, host com toggle); aposentar `NodeCanvas` antigo.
+4. Criar `data/` (Runs, Memory, Deposits panels) reaproveitando código existente; remover `RunsModal` e `MemoryModal`.
+5. Polir transições entre views, ocultar composer onde apropriado.

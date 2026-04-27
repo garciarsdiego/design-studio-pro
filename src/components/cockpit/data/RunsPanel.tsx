@@ -1,17 +1,11 @@
 import { useState } from "react";
-import { ChevronLeft, GitBranch, Play } from "lucide-react";
-import { GlassModal } from "./GlassModal";
-import { CapsuleTabs } from "./CapsuleTabs";
-import { CodeBlock } from "./CodeBlock";
-import { StatusDot } from "./StatusDot";
-import { DAGView } from "./DAGView";
+import { ChevronLeft } from "lucide-react";
+import { CapsuleTabs } from "../CapsuleTabs";
+import { CodeBlock } from "../CodeBlock";
+import { StatusDot } from "../StatusDot";
+import { DAGView } from "../DAGView";
 import { runs, type RunRow, dagNodes } from "@/data/mock";
 import { cn } from "@/lib/utils";
-
-interface RunsModalProps {
-  open: boolean;
-  onClose: () => void;
-}
 
 type RunTab = "overview" | "structure" | "activity" | "conversations" | "artifacts" | "logs";
 const TABS = [
@@ -28,97 +22,75 @@ const formatDuration = (ms: number) => {
   const s = Math.round(ms / 1000);
   if (s < 60) return `${s}s`;
   const m = Math.floor(s / 60);
-  const r = s % 60;
-  return `${m}m ${r}s`;
+  return `${m}m ${s % 60}s`;
 };
 
-export function RunsModal({ open, onClose }: RunsModalProps) {
+export function RunsPanel() {
   const [selected, setSelected] = useState<RunRow | null>(null);
   const [tab, setTab] = useState<RunTab>("overview");
 
-  const handleClose = () => {
-    setSelected(null);
-    setTab("overview");
-    onClose();
-  };
-
-  return (
-    <GlassModal
-      open={open}
-      onClose={handleClose}
-      title={selected ? `Run · ${selected.id}` : "Runs"}
-      icon={<Play className="h-3.5 w-3.5" />}
-      size="xl"
-      bare={!!selected}
-    >
-      {!selected ? (
-        <RunsList runs={runs} onSelect={(r) => setSelected(r)} />
-      ) : (
-        <div className="flex flex-col h-full">
-          {/* Sub-header */}
-          <div className="flex items-center justify-between gap-4 px-6 py-3 border-b border-border/10">
-            <button
-              onClick={() => setSelected(null)}
-              className="flex items-center gap-1.5 text-[12px] font-medium text-foreground/60 hover:text-foreground transition-colors"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" /> All runs
-            </button>
-            <div className="flex items-center gap-3 min-w-0">
-              <StatusDot status={selected.status} />
-              <span className="text-[13px] font-medium text-foreground truncate">{selected.name}</span>
-              <span className="font-mono text-[10px] text-foreground/40 hidden md:inline">
-                · {selected.agent} · {formatDuration(selected.durationMs)}
-              </span>
-            </div>
-            <CapsuleTabs<RunTab> items={TABS} active={tab} onChange={setTab} />
-          </div>
-
-          {/* Tab content */}
-          <div className="flex-1 overflow-hidden">
-            {tab === "overview" && <OverviewTab run={selected} />}
-            {tab === "structure" && <StructureTab />}
-            {tab === "activity" && <ActivityTab />}
-            {tab === "conversations" && <ConversationsTab />}
-            {tab === "artifacts" && <ArtifactsTab />}
-            {tab === "logs" && <LogsTab />}
-          </div>
+  if (!selected) {
+    return (
+      <div className="space-y-2">
+        <div className="grid grid-cols-12 gap-4 px-4 pb-2 text-mono-label">
+          <div className="col-span-3">ID</div>
+          <div className="col-span-4">Name</div>
+          <div className="col-span-2">Agent</div>
+          <div className="col-span-2">Duration</div>
+          <div className="col-span-1 text-right">Started</div>
         </div>
-      )}
-    </GlassModal>
-  );
-}
-
-function RunsList({ runs, onSelect }: { runs: RunRow[]; onSelect: (r: RunRow) => void }) {
-  return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-12 gap-4 px-4 pb-2 text-mono-label">
-        <div className="col-span-3">ID</div>
-        <div className="col-span-4">Name</div>
-        <div className="col-span-2">Agent</div>
-        <div className="col-span-2">Duration</div>
-        <div className="col-span-1 text-right">Started</div>
+        {runs.map((r) => (
+          <button
+            key={r.id}
+            onClick={() => setSelected(r)}
+            className="w-full grid grid-cols-12 gap-4 px-4 py-3 surface-elevated rounded-xl hover:border-amber/30 transition-colors text-left items-center"
+          >
+            <div className="col-span-3 flex items-center gap-2.5 min-w-0">
+              <StatusDot status={r.status} />
+              <span className="font-mono text-[12px] text-foreground/85 truncate">{r.id}</span>
+            </div>
+            <div className="col-span-4 text-[13px] text-foreground truncate">{r.name}</div>
+            <div className="col-span-2 font-mono text-[11px] text-foreground/55 truncate">{r.agent}</div>
+            <div className="col-span-2 font-mono text-[11px] text-foreground/55">{formatDuration(r.durationMs)}</div>
+            <div className="col-span-1 font-mono text-[11px] text-foreground/40 text-right">{r.startedAt}</div>
+          </button>
+        ))}
       </div>
-      {runs.map((r) => (
+    );
+  }
+
+  return (
+    <div className="surface-glass rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-260px)] min-h-[520px]">
+      <div className="flex items-center justify-between gap-4 px-6 py-3 border-b border-border/10">
         <button
-          key={r.id}
-          onClick={() => onSelect(r)}
-          className="w-full grid grid-cols-12 gap-4 px-4 py-3 surface-elevated rounded-xl hover:border-amber/30 transition-colors text-left items-center"
+          onClick={() => setSelected(null)}
+          className="flex items-center gap-1.5 text-[12px] font-medium text-foreground/60 hover:text-foreground transition-colors"
         >
-          <div className="col-span-3 flex items-center gap-2.5 min-w-0">
-            <StatusDot status={r.status} />
-            <span className="font-mono text-[12px] text-foreground/85 truncate">{r.id}</span>
-          </div>
-          <div className="col-span-4 text-[13px] text-foreground truncate">{r.name}</div>
-          <div className="col-span-2 font-mono text-[11px] text-foreground/55 truncate">{r.agent}</div>
-          <div className="col-span-2 font-mono text-[11px] text-foreground/55">{formatDuration(r.durationMs)}</div>
-          <div className="col-span-1 font-mono text-[11px] text-foreground/40 text-right">{r.startedAt}</div>
+          <ChevronLeft className="h-3.5 w-3.5" /> All runs
         </button>
-      ))}
+        <div className="flex items-center gap-3 min-w-0">
+          <StatusDot status={selected.status} />
+          <span className="text-[13px] font-medium text-foreground truncate">{selected.name}</span>
+          <span className="font-mono text-[10px] text-foreground/40 hidden md:inline">
+            · {selected.agent} · {formatDuration(selected.durationMs)}
+          </span>
+        </div>
+        <CapsuleTabs<RunTab> items={TABS} active={tab} onChange={setTab} />
+      </div>
+
+      <div className="flex-1 overflow-hidden">
+        {tab === "overview" && <Overview run={selected} />}
+        {tab === "structure" && <Structure />}
+        {tab === "activity" && <Activity />}
+        {tab === "conversations" && <Conversations />}
+        {tab === "artifacts" && <Artifacts />}
+        {tab === "logs" && <Logs />}
+      </div>
     </div>
   );
 }
 
-function OverviewTab({ run }: { run: RunRow }) {
+function Overview({ run }: { run: RunRow }) {
   return (
     <div className="p-6 space-y-5 overflow-auto h-full">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border/10 rounded-xl overflow-hidden border border-border/10">
@@ -130,16 +102,14 @@ function OverviewTab({ run }: { run: RunRow }) {
       <div>
         <div className="text-mono-label mb-2">Summary</div>
         <p className="text-[13px] text-foreground/75 leading-relaxed max-w-prose">
-          {run.name} executed in 6 stages across {run.agent}. The orchestrator brokered 3 approval gates and committed
-          {" "}
-          {run.artefacts} artefact{run.artefacts === 1 ? "" : "s"} to the deposits store.
+          {run.name} executed in 6 stages across {run.agent}. The orchestrator brokered 3 approval gates and committed {run.artefacts} artefact{run.artefacts === 1 ? "" : "s"} to the deposits store.
         </p>
       </div>
     </div>
   );
 }
 
-function StructureTab() {
+function Structure() {
   return (
     <div className="grid grid-cols-[1fr,280px] h-full">
       <div className="relative bg-grid-dots-tight">
@@ -162,7 +132,7 @@ function StructureTab() {
   );
 }
 
-function ActivityTab() {
+function Activity() {
   const events = [
     { t: "10:18:02", who: "Orchestrator", what: "spawned plan", id: "pl_4421" },
     { t: "10:18:14", who: "Web_Scraper", what: "fetched sources", id: "8 urls" },
@@ -187,7 +157,7 @@ function ActivityTab() {
   );
 }
 
-function ConversationsTab() {
+function Conversations() {
   return (
     <div className="p-6 space-y-3 overflow-auto h-full">
       {[
@@ -206,7 +176,7 @@ function ConversationsTab() {
   );
 }
 
-function ArtifactsTab() {
+function Artifacts() {
   return (
     <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-auto h-full">
       {[
@@ -229,7 +199,7 @@ function ArtifactsTab() {
   );
 }
 
-function LogsTab() {
+function Logs() {
   return (
     <div className="p-6 overflow-auto h-full">
       <CodeBlock

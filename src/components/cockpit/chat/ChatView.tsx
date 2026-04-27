@@ -1,36 +1,42 @@
-import { MessageSquare, Check, X } from "lucide-react";
-import { GlassModal } from "./GlassModal";
-import { ChatComposer } from "./ChatComposer";
-import { CodeBlock } from "./CodeBlock";
+import { Check, X } from "lucide-react";
+import { ChatComposer } from "../ChatComposer";
+import { CodeBlock } from "../CodeBlock";
+import { SessionStrip } from "./SessionStrip";
 import { askMessages } from "@/data/mock";
 import { cn } from "@/lib/utils";
 
-interface AskModalProps {
-  open: boolean;
-  onClose: () => void;
+interface ChatViewProps {
+  onSubmit?: (value: string) => void;
 }
 
-export function AskModal({ open, onClose }: AskModalProps) {
+export function ChatView({ onSubmit }: ChatViewProps) {
   return (
-    <GlassModal
-      open={open}
-      onClose={onClose}
-      title="Ask · New Thread"
-      icon={<MessageSquare className="h-3.5 w-3.5" />}
-      size="lg"
+    <section
+      role="region"
+      aria-label="Chat"
+      className="absolute inset-0 flex flex-col items-center justify-center px-4 pt-28 pb-44 animate-fade-in"
     >
-      <div className="flex flex-col gap-5">
+      {/* Floating conversation surface */}
+      <div className="w-full max-w-[760px] flex-1 overflow-y-auto py-6 space-y-5">
         {askMessages.map((m) => (
-          <div key={m.id} className={cn("flex flex-col gap-2", m.role === "user" ? "items-end" : "items-start")}>
+          <div
+            key={m.id}
+            className={cn(
+              "flex flex-col gap-2",
+              m.role === "user" ? "items-end" : "items-start",
+            )}
+          >
             <div className="flex items-center gap-2">
               <span className="text-mono-label">
                 {m.role === "user" ? "YOU" : m.agent ?? "AGENT"}
               </span>
-              <span className="font-mono text-[10px] text-foreground/30">{m.time}</span>
+              <span className="font-mono text-[10px] text-foreground/30">
+                {m.time}
+              </span>
             </div>
             <div
               className={cn(
-                "max-w-[78%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed",
+                "max-w-[88%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed",
                 m.role === "user"
                   ? "bg-amber/10 border border-amber/20 text-foreground"
                   : "surface-glass text-foreground/90",
@@ -40,19 +46,24 @@ export function AskModal({ open, onClose }: AskModalProps) {
             </div>
 
             {m.plan && (
-              <div className="w-full max-w-[78%] mt-1 surface-elevated rounded-xl p-4 space-y-3">
+              <div className="w-full max-w-[88%] mt-1 surface-elevated rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="text-mono-label text-amber/90">PLAN PREVIEW</div>
                   <span className="font-mono text-[10px] text-foreground/40">
                     ~{m.plan.estimatedTokens.toLocaleString()} tokens
                   </span>
                 </div>
-                <div className="text-[13px] font-medium text-foreground">{m.plan.title}</div>
+                <div className="text-[13px] font-medium text-foreground">
+                  {m.plan.title}
+                </div>
                 <CodeBlock
                   lines={[
                     { tag: "SYS", text: "Director requested batch recovery." },
-                    { tag: "SYS", text: "Awaiting manual confirmation for plan execution." },
-                    ...m.plan.steps.map((s, i) => ({ prompt: true, text: `step ${i + 1}: ${s}` })),
+                    { tag: "SYS", text: "Awaiting manual confirmation." },
+                    ...m.plan.steps.map((s, i) => ({
+                      prompt: true,
+                      text: `step ${i + 1}: ${s}`,
+                    })),
                   ]}
                 />
                 <div className="flex items-center justify-end gap-2 pt-1">
@@ -67,15 +78,18 @@ export function AskModal({ open, onClose }: AskModalProps) {
             )}
           </div>
         ))}
-
-        <div className="pt-2">
-          <ChatComposer
-            embedded
-            placeholder="Reply to thread…"
-            hint="Enter to send"
-          />
-        </div>
       </div>
-    </GlassModal>
+
+      {/* Bottom stack: session strip + composer */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 w-[min(760px,calc(100%-3rem))] flex flex-col gap-2">
+        <SessionStrip />
+        <ChatComposer
+          embedded
+          className="!static"
+          onSubmit={onSubmit}
+          hint="↵ send"
+        />
+      </div>
+    </section>
   );
 }

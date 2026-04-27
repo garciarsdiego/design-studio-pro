@@ -278,13 +278,51 @@ export const projectMeta: ProjectMeta = {
 };
 
 export const navItems = [
+  { id: "chat", label: "Chat" },
   { id: "console", label: "Console" },
-  { id: "ask", label: "Ask" },
-  { id: "runs", label: "Runs" },
-  { id: "memory", label: "Memory" },
-  { id: "setup", label: "Setup" },
+  { id: "data", label: "Data" },
 ] as const;
 
 export type NavId = (typeof navItems)[number]["id"];
+
+// ─── Workflow nodes (Console — n8n-style DAG) ────────────────────────────
+export interface WorkflowNode {
+  id: string;
+  label: string;
+  agent: string;
+  icon: LucideIcon;
+  status: AgentStatus | "completed";
+  /** Position in workflow grid (percent of canvas). */
+  x: number;
+  y: number;
+  metric?: string;
+  lastRun?: string;
+}
+
+export interface WorkflowEdge {
+  from: string;
+  to: string;
+}
+
+export const workflowNodes: WorkflowNode[] = [
+  { id: "wn_scrape",   label: "Web Scraper",      agent: "Web_Scraper",     icon: Search,   status: "error",      x: 10, y: 50, metric: "0 / 8 urls",  lastRun: "10:31" },
+  { id: "wn_normalize",label: "Normalise",        agent: "Data_Ingest",     icon: Database, status: "completed",  x: 28, y: 30, metric: "1.2 MB",      lastRun: "10:19" },
+  { id: "wn_embed",    label: "Embed",            agent: "Data_Ingest",     icon: Database, status: "completed",  x: 28, y: 70, metric: "812 vec",     lastRun: "10:20" },
+  { id: "wn_reason",   label: "Reason",           agent: "Analysis_Engine", icon: Brain,    status: "active",     x: 50, y: 50, metric: "ctx 8k",      lastRun: "10:21" },
+  { id: "wn_synth",    label: "Synthesise",       agent: "CodeGen_v2",      icon: Code2,    status: "idle",       x: 72, y: 35, metric: "—",           lastRun: "—" },
+  { id: "wn_report",   label: "Report",           agent: "Orchestrator",    icon: Network,  status: "idle",       x: 72, y: 65, metric: "—",           lastRun: "—" },
+  { id: "wn_tools",    label: "Tool Broker",      agent: "Tool_Broker",     icon: Wrench,   status: "idle",       x: 90, y: 50, metric: "ready",       lastRun: "09:50" },
+];
+
+export const workflowEdges: WorkflowEdge[] = [
+  { from: "wn_scrape",    to: "wn_normalize" },
+  { from: "wn_scrape",    to: "wn_embed" },
+  { from: "wn_normalize", to: "wn_reason" },
+  { from: "wn_embed",     to: "wn_reason" },
+  { from: "wn_reason",    to: "wn_synth" },
+  { from: "wn_reason",    to: "wn_report" },
+  { from: "wn_synth",     to: "wn_tools" },
+  { from: "wn_report",    to: "wn_tools" },
+];
 
 export { Workflow };
