@@ -22,7 +22,12 @@ export function WorkflowList({ onSelect, selectedId }: Props) {
           <button
             key={n.id}
             onClick={() => onSelect(n)}
-            className="w-full grid grid-cols-12 gap-4 px-4 py-3 surface-elevated rounded-xl hover:border-amber/30 transition-colors text-left items-center"
+            className={cn(
+              "w-full grid grid-cols-12 gap-4 px-4 py-3 surface-elevated rounded-xl transition-all text-left items-center",
+              selectedId === n.id
+                ? "border-amber/50 glow-amber-soft"
+                : "hover:border-amber/30",
+            )}
           >
             <div className="col-span-3 flex items-center gap-2.5 min-w-0">
               <StatusDot status={n.status} />
