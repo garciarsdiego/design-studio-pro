@@ -41,7 +41,7 @@ export function SetupModal({ open, onClose }: SetupModalProps) {
       }
     >
       <div className="flex flex-col gap-6">
-        <CapsuleTabs items={TABS} active={tab} onChange={setTab} />
+        <CapsuleTabs<SetupTab> items={TABS} active={tab} onChange={setTab} />
 
         {tab === "workspace" && (
           <div className="space-y-4">
