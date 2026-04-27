@@ -1,7 +1,11 @@
 import { ChevronDown, Plus } from "lucide-react";
 import { projectMeta } from "@/data/mock";
 
-export function SessionStrip() {
+interface Props {
+  onNewSession?: () => void;
+}
+
+export function SessionStrip({ onNewSession }: Props) {
   return (
     <div className="flex items-center justify-between gap-3 surface-glass rounded-full pl-4 pr-1.5 py-1.5">
       <div className="flex items-center gap-3 min-w-0 font-mono text-[11px] tracking-wider text-foreground/55">
@@ -14,7 +18,10 @@ export function SessionStrip() {
           {projectMeta.models[0]} <ChevronDown className="h-3 w-3" />
         </button>
       </div>
-      <button className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-colors">
+      <button
+        onClick={onNewSession}
+        className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-colors"
+      >
         <Plus className="h-3 w-3" /> New session
       </button>
     </div>
