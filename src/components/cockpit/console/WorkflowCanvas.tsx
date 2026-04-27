@@ -117,7 +117,8 @@ export function WorkflowCanvas({ selectedId, onSelect }: Props) {
                 fill="none"
                 stroke={stroke}
                 strokeOpacity={opacity}
-                strokeWidth={isFlowing ? 1.75 : 1.25}
+                strokeWidth={isFlowing ? 2 : 1.5}
+                strokeDasharray={e.status === "idle" ? "3 5" : undefined}
                 markerEnd={`url(#wf-arrow-${markerKey})`}
                 pointerEvents="none"
               />
