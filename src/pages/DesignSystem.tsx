@@ -122,7 +122,7 @@ const DesignSystem = () => {
             </span>
           </div>
           <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-[hsl(var(--text-mute))]">
-            <StatusDot tone="amber" />
+            <StatusDot status="active" />
             v1.0 · dark only
           </div>
         </div>
@@ -518,7 +518,7 @@ const DesignSystem = () => {
                 <span className="font-mono text-[10px] uppercase tracking-wider text-[hsl(var(--text-mute))]">
                   wn_reason
                 </span>
-                <StatusDot tone="amber" />
+                <StatusDot status="idle" />
               </div>
               <div className="mt-2 text-base text-foreground">Reasoner</div>
               <div className="mt-1 text-xs text-[hsl(var(--text-mute))]">
@@ -530,7 +530,7 @@ const DesignSystem = () => {
                 <span className="font-mono text-[10px] uppercase tracking-wider text-[hsl(var(--text-mute))]">
                   wn_exec · selected
                 </span>
-                <StatusDot tone="amber" />
+                <StatusDot status="active" />
               </div>
               <div className="mt-2 text-base text-foreground">Executor</div>
               <div className="mt-1 text-xs text-[hsl(var(--text-mute))]">
@@ -544,11 +544,16 @@ const DesignSystem = () => {
         <Section id="status" label="09" title="Status & Edges">
           <Sub>Status dots</Sub>
           <div className="mb-10 surface-glass grid grid-cols-2 gap-4 rounded-xl p-6 md:grid-cols-4">
-            {(["amber", "teal", "danger", "processing"] as const).map((tone) => (
-              <div key={tone} className="flex items-center gap-3">
-                <StatusDot tone={tone} />
+            {([
+              { status: "active", label: "active · amber" },
+              { status: "idle", label: "idle / ok · teal" },
+              { status: "error", label: "error · danger" },
+              { status: "processing", label: "processing" },
+            ] as const).map((s) => (
+              <div key={s.status} className="flex items-center gap-3">
+                <StatusDot status={s.status} />
                 <span className="font-mono text-[11px] uppercase tracking-wider text-[hsl(var(--text-mute))]">
-                  {tone}
+                  {s.label}
                 </span>
               </div>
             ))}
